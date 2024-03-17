@@ -28,7 +28,7 @@
                         </div>
                         <div class="row">
                             <div class="col-lg-8 offset-lg-1">
-                                <p class="fs-6 fw-normal w-auto">Add an image here:<input type="text" name="imageUrl" class="ms-2 mt-2 w-50 border"></p>
+                                <p class="fs-6 fw-normal w-auto">Add an image here:<input type="text" name="imageUrl" class="ms-2 mt-2 w-50 border" placeholder="Image Url..."></p>
                             </div>
                             <div class="col">
                                 <button class="btn d-flex align-items-center fs-4 p-2 px-3 shadow border border-3 border-dark-subtle" type="submit">
@@ -40,7 +40,12 @@
                 </form>
             </div>
         </div>
-         
+         <div class="d-flex justify-content-end mt-4" style="margin-right: 15%;">
+            <form action="${pageContext.request.contextPath}/people-zone" class="d-flex" method="get">
+                <input type="hidden" name="action" value="search">
+                <input type="text" name="keyword" placeholder="e.g. Sarah"><button type="submit" class="trans-button"><i class="fa fa-search"></i></button>
+            </form>
+        </div> 
         <!-- Posts -->  
         <div class="mt-5">
             <c:forEach var="post" items="${posts}">

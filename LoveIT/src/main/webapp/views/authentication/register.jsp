@@ -29,13 +29,27 @@
                             <select class="form-select" name="gender" aria-label="Team options">
                                 <option value="" selected="">Choose</option>
                                 <c:forEach items="${requestScope.genders}" var="gender">
-                                    <option value="${gender.id}">${gender.name}</option>
+                                    <c:choose>
+                                        <c:when test="${picked_gender.name eq gender.name}">
+                                            <option value="${gender.id}" selected>${gender.name}</option>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <option value="${gender.id}">${gender.name}</option>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </c:forEach>
                             </select><span class="input-group-text input-group-text input-group-text border-none">, my preference is</span>
                             <select class="form-select" name="gender" aria-label="Preferences options">
-                                <option value="">Choose</option>
+                                <option value="" selected="">Choose</option>
                                 <c:forEach items="${requestScope.genders}" var="gender">
-                                    <option value="${gender.id}">${gender.name}</option>
+                                    <c:choose>
+                                        <c:when test="${picked_preference.name eq gender.name}">
+                                            <option value="${gender.id}" selected>${gender.name}</option>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <option value="${gender.id}">${gender.name}</option>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </c:forEach>
                             </select>
                         </div>

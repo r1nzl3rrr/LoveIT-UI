@@ -138,10 +138,10 @@
                                         <c:forEach items="${requestScope.genders}" var="gender">
                                             <c:choose>
                                                 <c:when test="${gender.name eq user.getGender().getName()}">
-                                                    <option value="${gender.name}" selected>${gender.name}</option>
+                                                    <option value="${gender.id}" selected>${gender.name}</option>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <option value="${gender.name}">${gender.name}</option>
+                                                    <option value="${gender.id}">${gender.name}</option>
                                                 </c:otherwise>
                                             </c:choose>
                                         </c:forEach>
@@ -151,10 +151,10 @@
                                         <c:forEach items="${requestScope.genders}" var="preferenceGender">
                                             <c:choose>
                                                 <c:when test="${preferenceGender.name eq user.getPreferenceGender().getName()}">
-                                                    <option value="${preferenceGender.name}" selected>${preferenceGender.name}</option>
+                                                    <option value="${preferenceGender.id}" selected>${preferenceGender.name}</option>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <option value="${preferenceGender.name}">${preferenceGender.name}</option>
+                                                    <option value="${preferenceGender.id}">${preferenceGender.name}</option>
                                                 </c:otherwise>
                                             </c:choose>
                                         </c:forEach>

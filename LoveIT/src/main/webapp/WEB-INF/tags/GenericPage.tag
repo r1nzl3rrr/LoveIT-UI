@@ -43,7 +43,7 @@
         <jsp:doBody />
 
         <!-- Include footer -->
-        <DN:Footer />
+ 
 
         <!-- Include Bootstrap -->
         <script src="${pageContext.request.contextPath}/assets/bootstrap/bootstrap.min.js"></script>

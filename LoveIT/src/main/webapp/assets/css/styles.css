@@ -228,3 +228,71 @@ body {
 .admin-main {
   min-width: 83vw;
 }
+
+.welcome {
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: fadeInCenter 1s ease-out;
+}
+
+.welcome h1 {
+    font-size: 3rem;
+    color: #333;
+    margin-bottom: 10px;
+    animation: fadeInUp 1s ease-out;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    animation: fadeInUp 2s ease-out;
+}
+
+.gender-button {
+    padding: 10px 20px;
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background-color 0.3s;
+}
+
+.gender-button:hover {
+    background-color: #ff4d4d;
+}
+
+.already-member-link {
+    color: #333;
+    text-decoration: none;
+    font-size: 1rem;
+    margin-top: 20px;
+    animation: fadeInUp 3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInCenter {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
