@@ -1,0 +1,10 @@
+.management {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+}
+
+.management__table {
+    border: 1px solid black;
+    padding: 26px;
+}

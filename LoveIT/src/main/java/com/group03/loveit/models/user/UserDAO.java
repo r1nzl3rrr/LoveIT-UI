@@ -110,17 +110,19 @@ public final class UserDAO implements IUserDAO {
     @Override
     public CompletableFuture<List<UserDTO>> getUsers() {
         return CompletableFuture.supplyAsync(() -> {
+
+            List<UserDTO> list = new ArrayList<>();
+
             try (Connection conn = DBUtils.getConnection()) {
 
                 String sql = " SELECT * FROM [User] ";
-                List<UserDTO> list = new ArrayList<>();
 
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
                             UserDTO user = new UserDTO(
                                     rs.getLong(COL_ID),
-                                    rs.getByte(COL_AGE),
+                                    rs.getInt(COL_AGE),
                                     GenderDAO.getInstance().getGenderMap().get(rs.getLong(COL_GENDER_ID)),
                                     GenderDAO.getInstance().getGenderMap().get(rs.getLong(COL_GENDER_PREFERENCE_ID)),
                                     rs.getNString(COL_NICKNAME),
@@ -133,7 +135,6 @@ public final class UserDAO implements IUserDAO {
                             );
                             list.add(user);
                         }
-                        return list;
                     }
                 }
             } catch (SQLException ex) {
@@ -141,7 +142,7 @@ public final class UserDAO implements IUserDAO {
             } catch (RuntimeException ex) {
                 ex.printStackTrace();
             }
-            return null;
+            return list;
         });
     }
 
@@ -156,7 +157,7 @@ public final class UserDAO implements IUserDAO {
         String sql
                 = " SELECT * "
                 + " FROM [User] as u "
-                + " WHERE u.Id = ? AND u.Status = 'Active' ";
+                + " WHERE u.Id = ? ";
         try (Connection conn = DBUtils.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setLong(1, userId);
@@ -247,10 +248,38 @@ public final class UserDAO implements IUserDAO {
         return false;
     }
 
-    @Override
-    public boolean deleteUser(long l
-    ) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+//    @Override
+//    public boolean deleteUserById(long id) {
+//        try (Connection conn = DBUtils.getConnection()) {
+//            String sql
+//                    = " DELETE FROM [User] "
+//                    + " WHERE Id = ? ";
+//            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+//                ps.setLong(1, id);
+//                return ps.executeUpdate() != 0;
+//            }
+//        } catch (SQLException ex) {
+//            System.out.println("Cannot delete comment: " + ex.getMessage());
+//        }
+//        return false;
+//    }
+
+    public boolean flagUser(long id, boolean isActive) {
+        try (Connection conn = DBUtils.getConnection()) {
+            String sql
+                    = " UPDATE [User] "
+                    + " SET "
+                    + "     Status = ? "
+                    + " WHERE Id = ? ";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, isActive ? EStatus.ACTIVE.getStringFromEnum() : EStatus.DISABLE.getStringFromEnum());
+                ps.setLong(2, id);
+                return ps.executeUpdate() != 0;
+            }
+        } catch (SQLException ex) {
+            System.out.println("Cannot flag user: " + ex.getMessage());
+        }
+        return false;
     }
 
     public static void main(String[] args) {
@@ -263,6 +292,8 @@ public final class UserDAO implements IUserDAO {
 //
 //        user.setPassword("vu kim duy");
 //        System.out.println(userDAO.updateUser(user));
+
+        List<UserDTO> lists = userDAO.getUsers().join();
 
     }
 }

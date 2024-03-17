@@ -1,6 +1,18 @@
+<%@page import="com.group03.loveit.models.user.EAccountRole"%>
 <%@ page contentType="text/html" pageEncoding="UTF-8" %>
+
+<%--
+  Created by IntelliJ IDEA.
+  User: Nhat
+  Date: 2/26/2024
+  Time: 2:38 PM
+  To change this template use File | Settings | File Templates.
+--%>
+
+
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@taglib prefix="DN" tagdir="/WEB-INF/tags/" %>
+
 
 <DN:GenericPage pageStyleUrl="${pageContext.request.contextPath}/assets/css/styles.css">
     <main>
@@ -67,5 +79,113 @@
                 </jsp:include>
             </c:forEach>
         </div>
+
     </main>
+
+    <script>
+        let page = 1;
+        let isLoading = false;
+        const contextPath = "${pageContext.request.contextPath}";
+
+        window.onscroll = function() {
+            if (!isLoading && (window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+                isLoading = true;
+                loadMorePosts();
+            }
+        };
+
+        function loadMorePosts() {
+            console.log('Loading more posts...');
+            page++;
+            fetch(contextPath + '/people-zone?action=fetch&page=' + page)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(post => {
+                        const newPost = document.createElement('div');
+                        newPost.className = 'post';
+
+                        const topArea = document.createElement('div');
+                        topArea.className = 'top-area';
+
+                        const topLeftArea = document.createElement('div');
+                        topLeftArea.className = 'top-left-area';
+
+                        const userImage = document.createElement('img');
+                        userImage.src = post.user.imageUrl;
+                        userImage.alt = 'User Image';
+
+                        const info = document.createElement('div');
+                        info.className = 'info';
+
+                        const userName = document.createElement('p');
+                        userName.textContent = post.user.fullName;
+
+                        const userAge = document.createElement('p');
+                        userAge.textContent = 'Age: ' + post.user.age;
+
+                        const userNickName = document.createElement('p');
+                        userNickName.textContent = post.user.nickName;
+
+                        info.appendChild(userName);
+                        info.appendChild(userAge);
+                        info.appendChild(userNickName);
+
+                        topLeftArea.appendChild(userImage);
+                        topLeftArea.appendChild(info);
+
+                        const topRightArea = document.createElement('div');
+                        topRightArea.className = 'top-right-area';
+
+                        const favoriteButton = document.createElement('button');
+                        favoriteButton.type = 'submit';
+                        favoriteButton.innerHTML = post.isFavorite ?
+                            '<img src="${pageContext.request.contextPath}/assets/img/heart_on.png" alt="Favorite button">' :
+                            '<img src="${pageContext.request.contextPath}/assets/img/heart_off.png" alt="Favorite button">';
+                        topRightArea.appendChild(favoriteButton);
+
+                        const userGender = document.createElement('p');
+                        userGender.textContent = 'I am ' + post.user.gender.name;
+                        topRightArea.appendChild(userGender);
+
+                        const userPreferenceGender = document.createElement('p');
+                        userPreferenceGender.textContent = 'Looking for ' + post.user.preferenceGender.name;
+                        topRightArea.appendChild(userPreferenceGender);
+
+                        topArea.appendChild(topLeftArea);
+                        topArea.appendChild(topRightArea);
+
+                        const contentArea = document.createElement('div');
+                        contentArea.className = 'content_area';
+
+                        const content = document.createElement('p');
+                        content.textContent = post.content;
+
+                        const postImage = document.createElement('img');
+                        postImage.src = post.imageUrl;
+                        postImage.alt = 'Post image';
+
+                        contentArea.appendChild(content);
+                        contentArea.appendChild(postImage);
+
+                        const commentArea = document.createElement('div');
+                        commentArea.className = 'comment-area';
+
+                        const topComment = document.createElement('p');
+                        topComment.textContent = post.topComment ? post.topComment.content : 'Nobody had commented yet!';
+                        commentArea.appendChild(topComment);
+
+                        const discussNowButton = document.createElement('button');
+                        discussNowButton.textContent = 'Discuss Now >';
+                        commentArea.appendChild(discussNowButton);
+
+                        newPost.appendChild(topArea);
+                        newPost.appendChild(contentArea);
+                        newPost.appendChild(commentArea);
+
+                        document.getElementById('posts-container').appendChild(newPost);
+                    });
+                    isLoading = false;
+                });
+        }
+    </script>
 </DN:GenericPage>

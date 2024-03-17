@@ -116,7 +116,7 @@ public final class DataProcessingUtils {
         // at least 1 digit
         // length minimum is 8
         // contain digits, characters, !,@,#,$ only
-        return !isNullOrEmpty(password) && password.matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z!@#$\\d]{8,}$");
+        return !isNullOrEmpty(password) && password.matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z!@#$\\d]{6,}$");
     }
 
     /**

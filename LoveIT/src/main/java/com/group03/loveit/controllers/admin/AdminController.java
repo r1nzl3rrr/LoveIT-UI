@@ -5,15 +5,7 @@
  */
 package com.group03.loveit.controllers.admin;
 
-import com.group03.loveit.models.comment.CommentDAO;
-import com.group03.loveit.models.comment.CommentDTO;
-import com.group03.loveit.models.post.PostDAO;
-import com.group03.loveit.models.post.PostDTO;
-import com.group03.loveit.models.user.EStatus;
-
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -24,73 +16,71 @@ import javax.servlet.http.HttpServletResponse;
  * @author duyvu
  */
 public class AdminController extends HttpServlet {
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        PostDAO postDAO = new PostDAO();
-        List<PostDTO> posts = postDAO.getAllPosts().join();
 
-        CommentDAO commentDAO = new CommentDAO();
-        List<CommentDTO> comments = commentDAO.getAllComments().join();
+    // ==========================
+    // == Sub Routes
+    // ==========================
+    private final String CONTROLLER_DASHBOARD = "dashboard";
+    private final String CONTROLLER_ACCOUNTS = "accounts";
+    private final String CONTROLLER_POSTS = "posts";
 
-        request.setAttribute("posts", posts);
-        request.setAttribute("comments", comments);
+    // ==========================
+    // == Main Route
+    // ==========================
+    /**
+     * Process the same pattern of doGET and doPOST
+     *
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws ServletException
+     */
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        response.setContentType("text/html;charset=UTF-8");
 
-        request.getRequestDispatcher("/views/admin/admin-posts.jsp").forward(request, response);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
         String action = request.getParameter("action");
+        String url = "admin";
 
-        if (action != null) {
-            switch (action) {
-                case "delete_p":
-                    handleDeletePost(request, response);
-                    break;
-                case "flag_p":
-                    handleFlagPost(request, response);
-                    break;
-                case "delete_cmt":
-                    handleDeleteComment(request, response);
-                    break;
-                case "flag_cmt":
-                    handleFlagComment(request, response);
-                    break;
-                default:
-                    break;
+        try {
+            if (action == null || action.equals("dashboard")) {
+                url = url.concat("/").concat(CONTROLLER_DASHBOARD);
+            } else if (action.equals("accounts")) {
+                url = url.concat("/").concat(CONTROLLER_ACCOUNTS);
+            } else if (action.equals("posts")) {
+                url = url.concat("/").concat(CONTROLLER_POSTS);
             }
+
+        } catch (Exception ex) {
+            log("Error at MainController: " + ex.toString());
+        } finally {
+            request.getRequestDispatcher(url).forward(request, response);
         }
     }
 
-    private void handleDeletePost(HttpServletRequest request, HttpServletResponse response) throws IOException, NumberFormatException {
-        long id = Long.parseLong(request.getParameter("id"));
-        PostDAO postDAO = new PostDAO();
-        postDAO.deletePost(id);
-        response.sendRedirect(request.getContextPath() + "/admin");
+    /**
+     * Handling doGet method
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
     }
 
-    private void handleFlagPost(HttpServletRequest request, HttpServletResponse response) throws IOException, NumberFormatException {
-        long id = Long.parseLong(request.getParameter("id"));
-        PostDAO postDAO = new PostDAO();
-        PostDTO post = postDAO.getPostById(id).join();
-        postDAO.flagPost(id, !post.getStatus().equals(EStatus.ACTIVE.getStringFromEnum()));
-        response.sendRedirect(request.getContextPath() + "/admin");
-    }
-
-    private void handleDeleteComment(HttpServletRequest request, HttpServletResponse response) throws IOException, NumberFormatException {
-        long id = Long.parseLong(request.getParameter("id"));
-        CommentDAO commentDAO = new CommentDAO();
-        commentDAO.deleteComment(id);
-        response.sendRedirect(request.getContextPath() + "/admin");
-    }
-
-    private void handleFlagComment(HttpServletRequest request, HttpServletResponse response) throws IOException, NumberFormatException {
-        long id = Long.parseLong(request.getParameter("id"));
-        CommentDAO commentDAO = new CommentDAO();
-        CommentDTO comment = commentDAO.getCommentById(id).join();
-        commentDAO.flagComment(id, !comment.getStatus().equals(EStatus.ACTIVE.getStringFromEnum()));
-        response.sendRedirect(request.getContextPath() + "/admin");
+    /**
+     * Handling doPost method
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
     }
 }

@@ -1,0 +1,78 @@
+.search-bar {
+    text-align: right;
+}
+
+.post, .top-area, .top-left-area, .top-right-area, .info > div:first-child, .top-right-area div, .content_area, .comment-area {
+    display: flex;
+}
+
+.post {
+    border: 1px solid black;
+    padding: 20px;
+    width: 50%;
+    margin: auto;
+    flex-direction: column;
+}
+
+.top-area, .content_area {
+    justify-content: space-between;
+}
+
+.top-left-area, .top-right-area {
+    justify-content: center;
+}
+
+.top-left-area {
+    flex-direction: row;
+}
+
+.top-left-area img, .comment-area img {
+    width: 100px;
+    height: 100px;
+    margin-right: 20px;
+}
+
+.top-left-area p, .top-right-area p {
+    margin-right: 10px;
+}
+
+.info {
+    flex-direction: column;
+}
+
+.top-right-area {
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.top-right-area button {
+    border: none;
+}
+
+.content_area img {
+    width: 200px;
+    height: 200px;
+}
+
+hr {
+    border-top: 1px solid black;
+    color: #333;
+    background-color: #333;
+    height: 1px;
+    width: 100%;
+}
+
+.comment-area {
+    align-items: center;
+    margin-top: 20px;
+}
+
+.comment-area .text {
+    border: 1px solid black;
+    padding: 10px;
+    margin: 0 20px;
+}
+
+.comment-area form {
+    margin-left: auto;
+}

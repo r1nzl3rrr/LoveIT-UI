@@ -1,0 +1,16 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    padding: 20px;
+    width: 200px;
+    border: 1px solid black;
+    height: 100vh;
+}
+
+.sidebar a {
+    display: inline-block;
+    padding: 20px;
+    border: 1px solid black;
+}

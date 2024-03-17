@@ -102,8 +102,4 @@ public final class GenderDAO {
     public final ArrayList<GenderDTO> getGenderList() {
         return new ArrayList<>(genderMap.values());
     }
-
-    public static void main(String[] args) {
-        System.out.println(GenderDAO.getInstance().getGenderList());
-    }
 }

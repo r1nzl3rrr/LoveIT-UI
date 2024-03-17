@@ -5,8 +5,10 @@
 <%
     final String url_people_zone = request.getContextPath() + "/people-zone";
     final String url_favorites = request.getContextPath() + "/favorites";
+    final String url_admin = request.getContextPath() + "/admin";
     final String url_login = request.getContextPath() + "/login";
     final String url_home = request.getContextPath() + "/";
+    
 
 
 %>
@@ -27,13 +29,18 @@
                     <li class="nav-item nav-button">
                         <a class="nav-link nav-link-button" href="<%= url_favorites%>"><i class="fa-solid fa-heart me-2"></i>Favorites</a>
                     </li>
+                    <c:if test="${sessionScope.SESSION_USER.getRole().getStringFromEnum() eq 'Admin'}">
+                        <li class="nav-item nav-button">
+                            <a class="nav-link nav-link-button" href="<%= url_admin%>"><i class="fa fa-user me-2"></i>Admin</a>
+                        </li>
+                    </c:if>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <c:choose>
                             <c:when test="${sessionScope.SESSION_USER ne null}">
                                 <a class="nav-link" href="${pageContext.request.contextPath}/user-profile">
-                                    <img class="card-border pfp" height="40px" src="${sessionScope.SESSION_USER.imageUrl}">
+                                    <img class="card-border pfp" height="40px" width="40px" src="${sessionScope.SESSION_USER.imageUrl}">
                                 </a>
                             </c:when>
                             <c:otherwise>

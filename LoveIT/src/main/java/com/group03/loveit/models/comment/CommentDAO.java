@@ -105,7 +105,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL ORDER BY " + COL_CREATED_AT + " DESC";
+                String query = "SELECT * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL ORDER BY " + COL_ID + " DESC";
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, postId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -140,7 +140,8 @@ public class CommentDAO implements ICommentDAO {
      * Retrieves the first comment of a post from the database.
      *
      * @param postId The ID of the post to retrieve the top comment for.
-     * @return The CompletableFuture that returns the CommentDTO object representing the top comment, or null if the post has no comments.
+     * @return The CompletableFuture that returns the CommentDTO object
+     * representing the top comment, or null if the post has no comments.
      */
     @Override
     public CompletableFuture<CommentDTO> getTopCommentByPost(long postId) {
@@ -150,7 +151,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT TOP 1 * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL ORDER BY " + COL_CREATED_AT + " DESC";
+                String query = "SELECT TOP 1 * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL ORDER BY " + COL_ID + " DESC";
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, postId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -198,7 +199,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT * FROM Comment WHERE " + COL_REPLY_ID + " = ?";
+                String query = "SELECT * FROM Comment WHERE " + COL_REPLY_ID + " = ? ORDER BY " + COL_USER_ID + " DESC";
                 CommentDTO parentCmt = getCommentById(parentId).join();
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, parentId);
@@ -231,7 +232,6 @@ public class CommentDAO implements ICommentDAO {
         });
     }
 
-
     /**
      * Retrieves all comments from the database.
      *
@@ -246,7 +246,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT * FROM Comment";
+                String query = "SELECT * FROM Comment ORDER BY " + COL_USER_ID + " DESC";
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
@@ -281,7 +281,6 @@ public class CommentDAO implements ICommentDAO {
             return comments;
         });
     }
-
 
     /**
      * Inserts a new comment into the database.
@@ -350,13 +349,15 @@ public class CommentDAO implements ICommentDAO {
     }
 
     /**
-     * Flags a comment in the database by changing its status.
-     * If isActive is true, the status of the comment will be set to "ACTIVE".
-     * If isActive is false, the status of the comment will be set to "DISABLED".
+     * Flags a comment in the database by changing its status. If isActive is
+     * true, the status of the comment will be set to "ACTIVE". If isActive is
+     * false, the status of the comment will be set to "DISABLED".
      *
      * @param id The ID of the comment to flag.
-     * @param isActive A boolean indicating whether the comment should be active.
-     * @return A CompletableFuture that represents the completion of the flagging operation.
+     * @param isActive A boolean indicating whether the comment should be
+     * active.
+     * @return A CompletableFuture that represents the completion of the
+     * flagging operation.
      */
     @Override
     public CompletableFuture<Void> flagComment(long id, boolean isActive) {

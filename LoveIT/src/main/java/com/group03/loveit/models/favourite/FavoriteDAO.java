@@ -91,7 +91,7 @@ public class FavoriteDAO implements IFavoriteDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT * FROM Favorite WHERE " + COL_USER_ID + " = ?";
+                String query = "SELECT * FROM Favorite WHERE " + COL_USER_ID + " = ? ORDER BY " + COL_USER_ID + " DESC";
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, userId);
                     try (ResultSet rs = ps.executeQuery()) {

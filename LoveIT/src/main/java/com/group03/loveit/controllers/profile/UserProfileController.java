@@ -87,7 +87,7 @@ public class UserProfileController extends HttpServlet {
             // Checking Old Password
             byte[] storedPassword = user.getPassword().getBytes();
             boolean isVerified = CryptoUtils.verify(oldPassword, storedPassword);
-            if (!DataProcessingUtils.isPasswordValid(oldPassword) || !isVerified) {
+            if (!isVerified) {
                 errorMessages.put("errorOldPassword", "Failed to verify the old password. Please try again");
             }
 

@@ -81,6 +81,36 @@ public class PostDAO implements IPostDAO {
         });
     }
 
+//    public Long getPostsCount() {
+//        try (Connection conn = DBUtils.getConnection()) {
+//            String sql
+//                    = " SELECT count(*) "
+//                    + " FROM Post ";
+//
+//            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+//                while (rs.next()) {
+//                    long userId = rs.getLong(COL_USER_ID);
+//                    UserDAO userDAO = new UserDAO();
+//                    UserDTO user = userDAO.getUserById(userId);
+//
+//                    PostDTO post = new PostDTO(
+//                            rs.getLong(COL_ID),
+//                            user,
+//                            rs.getString(COL_CONTENT),
+//                            rs.getTimestamp(COL_CREATED_AT).toLocalDateTime(),
+//                            rs.getInt(COL_HEARTS_TOTAL),
+//                            rs.getInt(COL_COMMENT_TOTAL),
+//                            rs.getString(COL_STATUS),
+//                            rs.getString(COL_IMAGE_URL)
+//                    );
+//                    posts.add(post);
+//                }
+//            }
+//        } catch (SQLException e) {
+//            System.out.println("Cannot get posts: " + e.getMessage());
+//        }
+//        return posts;
+//    }
     /**
      * Retrieves all posts from the database.
      *
@@ -99,7 +129,7 @@ public class PostDAO implements IPostDAO {
                 if (conn == null) {
                     throw new RuntimeException("Connection is null");
                 }
-                String query = "SELECT * FROM Post";
+                String query = "SELECT * FROM Post ORDER BY " + COL_ID + " DESC";
 
                 try (PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -128,31 +158,100 @@ public class PostDAO implements IPostDAO {
     }
 
     /**
-     * Retrieves all posts from the database where either the post content or
-     * the user's full name contains the provided keyword.
+     * Retrieves a list of posts from the database based on certain conditions.
      *
-     * @param keyword The keyword to search for in the post content and user's
-     * full name.
-     * @return A CompletableFuture that completes with a List of PostDTO objects
-     * representing all posts in the database where either the post content or
-     * the user's full name contains the provided keyword. Each PostDTO object
-     * contains the post details and the associated user details. If there are
-     * no posts in the database that meet the condition, the CompletableFuture
-     * completes with an empty list.
+     * @param pageSize The number of posts to retrieve per page. If null, all posts are retrieved.
+     * @param page The page number of the posts to retrieve. If null, all posts are retrieved.
+     * @param filter The PostFilter object containing the filtering conditions.
+     * @return A CompletableFuture that completes with a list of PostDTO objects that match the given conditions.
      */
     @Override
-    public CompletableFuture<List<PostDTO>> getPostsByCondition(String keyword) {
-        String lowerCaseKeyword = keyword.toLowerCase();
-        return getAllPosts().thenApply(posts -> {
-            List<PostDTO> filteredPosts = new ArrayList<>();
-            for (PostDTO post : posts) {
-                if (post.getContent().toLowerCase().contains(lowerCaseKeyword)
-                        || post.getUser().getFullName().toLowerCase().contains(lowerCaseKeyword)
-                        || post.getUser().getNickName().toLowerCase().contains(lowerCaseKeyword)) {
-                    filteredPosts.add(post);
+    public CompletableFuture<List<PostDTO>> getFilteredPosts(Integer pageSize, Integer page, PostFilter filter) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<PostDTO> posts = new ArrayList<>();
+            try (Connection conn = DBUtils.getConnection()) {
+                if (conn == null) {
+                    throw new RuntimeException("Connection is null");
                 }
+                String baseQuery = "SELECT p.Id, p.[User_Id], p.Content, p.Created_At, p.Hearts_Total, p.Comment_Total, p.[Status], p.Image_Url " +
+                        "FROM Post p JOIN [User] u ON p.[User_Id] = u.Id " +
+                        "WHERE (? IS NULL OR p.[User_Id] != ?) AND (? IS NULL OR u.Preference_Id = ?) " +
+                        "AND (? IS NULL OR (p.Content LIKE ? OR u.FullName LIKE ? OR u.NickName LIKE ?)) " +
+                        "AND (? IS NULL OR u.Gender_Id = ?) AND p.[Status] != 'Disable' " +
+                        "ORDER BY p.Id DESC";
+
+                String query = (pageSize != null && page != null) ? baseQuery + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY" : baseQuery;
+
+                try (PreparedStatement ps = conn.prepareStatement(query)) {
+                    int index = 1;
+                    if (filter.getUserId() == null) {
+                        ps.setNull(index++, java.sql.Types.NUMERIC);
+                        ps.setNull(index++, java.sql.Types.NUMERIC);
+                    } else {
+                        ps.setLong(index++, filter.getUserId());
+                        ps.setLong(index++, filter.getUserId());
+                    }
+                    if (filter.getGenderId() == null) {
+                        ps.setNull(index++, java.sql.Types.NUMERIC);
+                        ps.setNull(index++, java.sql.Types.NUMERIC);
+                    } else {
+                        ps.setLong(index++, filter.getGenderId());
+                        ps.setLong(index++, filter.getGenderId());
+                    }
+                    if (filter.getKeyword() == null) {
+                        ps.setNull(index++, java.sql.Types.VARCHAR);
+                        ps.setNull(index++, java.sql.Types.VARCHAR);
+                        ps.setNull(index++, java.sql.Types.VARCHAR);
+                        ps.setNull(index++, java.sql.Types.VARCHAR);
+                    } else {
+                        String keyword = "%" + filter.getKeyword() + "%";
+                        ps.setString(index++, filter.getKeyword());
+                        ps.setString(index++, keyword);
+                        ps.setString(index++, keyword);
+                        ps.setString(index++, keyword);
+                    }
+                    if (filter.getPrefGenderId() == null) {
+                        ps.setNull(index++, java.sql.Types.NUMERIC);
+                        ps.setNull(index++, java.sql.Types.NUMERIC);
+                    } else {
+                        ps.setLong(index++, filter.getPrefGenderId());
+                        ps.setLong(index++, filter.getPrefGenderId());
+                    }
+                    if (pageSize != null && page != null) {
+                        ps.setInt(index++, pageSize * (page - 1));
+                        ps.setInt(index++, pageSize);
+                    }
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            long userId = rs.getLong(COL_USER_ID);
+                            UserDAO userDAO = new UserDAO();
+                            UserDTO user = userDAO.getUserById(userId);
+
+                            PostDTO post = new PostDTO(
+                                    rs.getLong(COL_ID),
+                                    user,
+                                    rs.getString(COL_CONTENT),
+                                    rs.getTimestamp(COL_CREATED_AT).toLocalDateTime(),
+                                    rs.getInt(COL_HEARTS_TOTAL),
+                                    rs.getInt(COL_COMMENT_TOTAL),
+                                    rs.getString(COL_STATUS),
+                                    rs.getString(COL_IMAGE_URL)
+                            );
+                            posts.add(post);
+                        }
+                    }
+                }
+
+                // If no posts were found with the filter, fetch all posts
+                if (posts.isEmpty()) {
+                    posts = getAllPosts().join();
+                }
+
+            } catch (SQLException e) {
+                System.out.println("Cannot get filtered posts: " + e.getMessage());
             }
-            return filteredPosts;
+            return posts;
         });
     }
 
@@ -236,13 +335,14 @@ public class PostDAO implements IPostDAO {
     }
 
     /**
-     * Flags a post in the database by changing its status.
-     * If isActive is true, the status of the post will be set to "ACTIVE".
-     * If isActive is false, the status of the post will be set to "DISABLED".
+     * Flags a post in the database by changing its status. If isActive is true,
+     * the status of the post will be set to "ACTIVE". If isActive is false, the
+     * status of the post will be set to "DISABLED".
      *
      * @param id The ID of the post to flag.
      * @param isActive A boolean indicating whether the post should be active.
-     * @return A CompletableFuture that represents the completion of the flagging operation.
+     * @return A CompletableFuture that represents the completion of the
+     * flagging operation.
      * @throws SQLException If a database access error occurs.
      */
     @Override

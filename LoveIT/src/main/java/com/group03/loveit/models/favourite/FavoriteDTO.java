@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
  * @author Nhat
  */
 public class FavoriteDTO {
+
     // Fields
     private PostDTO post;
     private UserDTO user;
@@ -29,9 +30,11 @@ public class FavoriteDTO {
     public void setUser(UserDTO user) {
         this.user = user;
     }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
