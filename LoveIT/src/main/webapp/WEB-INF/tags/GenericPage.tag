@@ -49,6 +49,5 @@
         <script src="${pageContext.request.contextPath}/assets/js/bs-init.js"></script>
         <script src="${pageContext.request.contextPath}/assets/js/chart.min.js"></script>
         <script src="${pageContext.request.contextPath}/assets/bootstrap/bootstrap.min.js"></script>
-
     </body>
 </html>

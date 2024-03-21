@@ -123,6 +123,8 @@ public class UserProfileController extends HttpServlet {
                 // Update user from database
                 UserDAO userDAO = new UserDAO();
                 userDAO.updateUser(user);
+                
+                request.setAttribute("success", "Edit profile successfully");
             }
 
             // Redirect to profile page

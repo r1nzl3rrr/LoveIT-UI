@@ -16,26 +16,27 @@
 
 <DN:GenericPage pageStyleUrl="${pageContext.request.contextPath}/assets/css/styles.css">
     <main>
+        <input type="hidden" id="loggedInUserId" value="${sessionScope.SESSION_USER.id}" />
         <!-- Create post -->
         <div class="new-post" id="new-post">
             <div class="card-body my-4">
                 <form action="${pageContext.request.contextPath}/people-zone?action=create_post" method="post">
                     <div class="container card-container card-border shadow">
                         <div class="row">
-                            <div class="col-md-12 col-lg-12 ps-4 w-75">
+                            <div class="d-flex align-items-center col-md-12 col-lg-12 ps-4 w-75">
                                 <c:choose>
                                     <c:when test="${sessionScope.SESSION_USER ne null}">
                                         <a class="nav-link" style="display: inline-block;" href="${pageContext.request.contextPath}/user-profile">
-                                            <img class="card-border" height="45px" src="${sessionScope.SESSION_USER.imageUrl}">
+                                            <img class="card-border" height="45px" width="45px" src="${sessionScope.SESSION_USER.imageUrl}">
                                         </a>
                                     </c:when>
                                     <c:otherwise>
                                         <a class="nav-link" style="display: inline-block;" href="${pageContext.request.contextPath}/login">
-                                            <img class="card-border" height="45px" src="${pageContext.request.contextPath}/assets/img/Default_pfp.svg">
+                                            <img class="card-border" height="45px" width="45px" src="${pageContext.request.contextPath}/assets/img/Default_pfp.svg">
                                         </a>
                                     </c:otherwise>
                                 </c:choose>
-                                <input type="text" name="content" class="w-75 border-bottom border-3" placeholder="Make a new post...">
+                                <textarea id="content" name="content" rows="4" cols="50" class="w-75 border-bottom border-3 ms-3" placeholder="Make a new post..."></textarea>
                             </div>
                         </div>
                         <div class="row">
@@ -52,14 +53,15 @@
                 </form>
             </div>
         </div>
-         <div class="d-flex justify-content-end mt-4" style="margin-right: 15%;">
+        <div class="d-flex justify-content-end mt-4" style="margin-right: 15%;">
             <form action="${pageContext.request.contextPath}/people-zone" class="d-flex" method="get">
                 <input type="hidden" name="action" value="search">
-                <input type="text" name="keyword" placeholder="e.g. Sarah"><button type="submit" class="trans-button"><i class="fa fa-search"></i></button>
+                <input type="text" name="keyword" placeholder="e.g. Sarah">
+                <button type="submit" class="trans-button"><i class="fa fa-search"></i></button>
             </form>
         </div> 
         <!-- Posts -->  
-        <div class="mt-5">
+        <div class="mt-5" id="posts-container">
             <c:forEach var="post" items="${posts}">
                 <jsp:include page="post.jsp">
                     <jsp:param name="post_id" value="${post.id}" />
@@ -83,109 +85,297 @@
     </main>
 
     <script>
+        // Initialize variables
         let page = 1;
         let isLoading = false;
         const contextPath = "${pageContext.request.contextPath}";
+        let fetchedPostIds = [];
 
-        window.onscroll = function() {
+        // Add the IDs of the initial posts to the fetchedPostIds array
+        <c:forEach var="post" items="${posts}">
+            fetchedPostIds.push(${post.id});
+        </c:forEach>
+
+        // Event listener for scroll event
+        window.onscroll = function () {
+            // Check if the user has scrolled to the bottom of the page
             if (!isLoading && (window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
                 isLoading = true;
                 loadMorePosts();
             }
         };
 
+        // Function to load more posts
         function loadMorePosts() {
             console.log('Loading more posts...');
             page++;
-            fetch(contextPath + '/people-zone?action=fetch&page=' + page)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(post => {
-                        const newPost = document.createElement('div');
-                        newPost.className = 'post';
+            // Send a POST request to the server to fetch more posts
+            fetch(contextPath + '/people-zone?action=fetch&page=' + page, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(fetchedPostIds),
+            })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Loop through the posts returned by the server
+                        data.forEach(post => {
+                            fetchedPostIds.push(post.id);
+                            const mainDiv = document.createElement('div');
+                            mainDiv.classList.add('mt-1', 'mb-3');
 
-                        const topArea = document.createElement('div');
-                        topArea.className = 'top-area';
+                            const cardDiv = document.createElement('div');
+                            cardDiv.classList.add('card', 'm-auto', 'w-75', 'card-container', 'card-border', 'shadow');
 
-                        const topLeftArea = document.createElement('div');
-                        topLeftArea.className = 'top-left-area';
+                            const cardBodyDiv = document.createElement('div');
+                            cardBodyDiv.classList.add('card-body', 'post');
 
-                        const userImage = document.createElement('img');
-                        userImage.src = post.user.imageUrl;
-                        userImage.alt = 'User Image';
+                            // USER INFORMATION SECTION
+                            const userRowDiv = document.createElement('div');
+                            userRowDiv.classList.add('row');
 
-                        const info = document.createElement('div');
-                        info.className = 'info';
+                            const userProfileColDiv = document.createElement('div');
+                            userProfileColDiv.classList.add('col-2', 'col-lg-1', 'col-xl-1', 'offset-lg-0', 'col-md-3', 'ms-1');
 
-                        const userName = document.createElement('p');
-                        userName.textContent = post.user.fullName;
+                            // Conditional logic for user profile image and link based on current user
+                            let userProfileLink;
+                            const loggedInUserId = document.getElementById('loggedInUserId').value;
 
-                        const userAge = document.createElement('p');
-                        userAge.textContent = 'Age: ' + post.user.age;
+                            if (Number(post.user.id) === Number(loggedInUserId)) {
+                              userProfileLink = document.createElement('a');
+                              userProfileLink.href = 'user-profile';
+                            } else {
+                              userProfileLink = document.createElement('a');
+                              userProfileLink.href = 'other-profile?userId=' + post.user.id;
+                            }
 
-                        const userNickName = document.createElement('p');
-                        userNickName.textContent = post.user.nickName;
+                            const userProfileImg = document.createElement('img');
+                            userProfileImg.classList.add('card-border');
+                            userProfileImg.height = 90;
+                            userProfileImg.width = 90;
+                            userProfileImg.src = post.user.imageUrl;
 
-                        info.appendChild(userName);
-                        info.appendChild(userAge);
-                        info.appendChild(userNickName);
+                            userProfileLink.appendChild(userProfileImg);
+                            userProfileColDiv.appendChild(userProfileLink);
 
-                        topLeftArea.appendChild(userImage);
-                        topLeftArea.appendChild(info);
+                            const userNameColDiv = document.createElement('div');
+                            userNameColDiv.classList.add('col-lg-6', 'offset-lg-0', 'd-flex', 'flex-wrap', 'col-md-3');
 
-                        const topRightArea = document.createElement('div');
-                        topRightArea.className = 'top-right-area';
+                            //USER PROFILE INFORAMTION
+                            const userNameAndAgeDiv = document.createElement('div');
+                            userNameAndAgeDiv.classList.add('d-flex', 'w-100');
+       
+                            const userNameDiv = document.createElement('h1');
+                            userNameDiv.classList.add('d-flex', 'txt-main-col');
+                            userNameDiv.textContent = post.user.fullName;
 
-                        const favoriteButton = document.createElement('button');
-                        favoriteButton.type = 'submit';
-                        favoriteButton.innerHTML = post.isFavorite ?
-                            '<img src="${pageContext.request.contextPath}/assets/img/heart_on.png" alt="Favorite button">' :
-                            '<img src="${pageContext.request.contextPath}/assets/img/heart_off.png" alt="Favorite button">';
-                        topRightArea.appendChild(favoriteButton);
+                            const userAgeDiv = document.createElement('em');
+                            userAgeDiv.classList.add('d-flex', 'd-xl-flex', 'my-auto', 'align-items-xl-center', 'ms-4', 'px-2', 'border', 'border-dark-subtle', 'rounded', 'border-3');
+                            userAgeDiv.textContent = 'Age ' + post.user.age;
 
-                        const userGender = document.createElement('p');
-                        userGender.textContent = 'I am ' + post.user.gender.name;
-                        topRightArea.appendChild(userGender);
+                            userNameAndAgeDiv.appendChild(userNameDiv);
+                            userNameAndAgeDiv.appendChild(userAgeDiv);
 
-                        const userPreferenceGender = document.createElement('p');
-                        userPreferenceGender.textContent = 'Looking for ' + post.user.preferenceGender.name;
-                        topRightArea.appendChild(userPreferenceGender);
 
-                        topArea.appendChild(topLeftArea);
-                        topArea.appendChild(topRightArea);
+                            const userNicknameDiv = document.createElement('small');
+                            userNicknameDiv.classList.add('post-subtitle');
+                            userNicknameDiv.textContent = post.user.nickName;
 
-                        const contentArea = document.createElement('div');
-                        contentArea.className = 'content_area';
+                            userNameColDiv.appendChild(userNameAndAgeDiv);
+                            userNameColDiv.appendChild(userNicknameDiv);
+                            
+                            //USER GENDER AND PREFERENCE SECTION
+                            const userPrefColDiv = document.createElement('div');
+                            userPrefColDiv.classList.add('col-lg-3', 'col-xl-3', 'offset-lg-1', 'offset-xl-0', 'mt-sm-auto');
 
-                        const content = document.createElement('p');
-                        content.textContent = post.content;
+                            const userPrefPara = document.createElement('p');
+                            userPrefPara.classList.add('text-center', 'text-secondary-emphasis');
 
-                        const postImage = document.createElement('img');
-                        postImage.src = post.imageUrl;
-                        postImage.alt = 'Post image';
+                            const genderText = document.createTextNode('I am a ');
+                            
+                            const userGenderStrong = document.createElement('strong');
+                            userGenderStrong.textContent = post.user.gender.name;
 
-                        contentArea.appendChild(content);
-                        contentArea.appendChild(postImage);
+                            const prefText = document.createTextNode(', looking for a ');
 
-                        const commentArea = document.createElement('div');
-                        commentArea.className = 'comment-area';
+                            const userPrefStrong = document.createElement('strong');
+                            userPrefStrong.textContent = post.user.preferenceGender.name;
+                            
+                            userPrefPara.appendChild(genderText);
+                            userPrefPara.appendChild(userGenderStrong);
+                            userPrefPara.appendChild(prefText);
+                            userPrefPara.appendChild(userPrefStrong);
 
-                        const topComment = document.createElement('p');
-                        topComment.textContent = post.topComment ? post.topComment.content : 'Nobody had commented yet!';
-                        commentArea.appendChild(topComment);
+                            userPrefColDiv.appendChild(userPrefPara);
 
-                        const discussNowButton = document.createElement('button');
-                        discussNowButton.textContent = 'Discuss Now >';
-                        commentArea.appendChild(discussNowButton);
+                            //HEART BUTTON SECTION
+                            const userFavColDiv = document.createElement('div');
+                            userFavColDiv.classList.add('col-xl-1', 'offset-xl-0', 'd-xl-flex', 'justify-content-xl-center', 'align-items-xl-start', 'ms-5', 'fs-2');
 
-                        newPost.appendChild(topArea);
-                        newPost.appendChild(contentArea);
-                        newPost.appendChild(commentArea);
+                            const favForm = document.createElement('form');
+                            favForm.action = '${contextPath}/LoveIT/people-zone?action=favorite&post_id=' + post.id;
+                            favForm.method = 'post';
 
-                        document.getElementById('posts-container').appendChild(newPost);
+                            const favButton = document.createElement('button');
+                            favButton.type = 'submit';
+                            favButton.classList.add('trans-button');
+
+                            // Conditional logic for favorite icon based on is_favorite variable
+                            let favIcon;
+                            if (post.isFavorite) {
+                              favIcon = document.createElement('i');
+                              favIcon.classList.add('fa-solid', 'fa-heart');
+                              favIcon.style.color = 'red';
+                            } else {
+                              favIcon = document.createElement('i');
+                              favIcon.classList.add('fa-solid', 'fa-heart');
+                              favIcon.style.color = 'black';
+                            }
+
+                            favButton.appendChild(favIcon);
+                            favForm.appendChild(favButton);
+                            userFavColDiv.appendChild(favForm);
+
+                            userRowDiv.appendChild(userProfileColDiv);
+                            userRowDiv.appendChild(userNameColDiv);
+                            userRowDiv.appendChild(userPrefColDiv);
+                            userRowDiv.appendChild(userFavColDiv);
+
+                            // POST CONTENT SECTION
+                            const contentDiv = document.createElement('div');
+                            contentDiv.classList.add('d-flex');
+
+                            const postContentPre = document.createElement('pre');
+                            postContentPre.classList.add('w-75', 'pt-4', 'me-2');
+                            postContentPre.textContent = post.content;
+
+                            const postImage = document.createElement('img');
+                            postImage.classList.add('w-25');
+                            postImage.style.borderRadius = '20px';
+                            postImage.src = post.imageUrl;
+
+                            contentDiv.appendChild(postContentPre);
+                            contentDiv.appendChild(postImage);
+
+                            // COMMENT PREVIEW SECTION
+                            const commentRowDiv = document.createElement('div');
+                            commentRowDiv.classList.add('row', 'border-top', 'border-3', 'mt-3', 'pt-3');
+
+                            const commentColDiv = document.createElement('div');
+                            commentColDiv.classList.add('col-2', 'col-lg-7', 'col-xl-7', 'offset-lg-0');
+
+                            const commentCardDiv = document.createElement('div');
+                            commentCardDiv.classList.add('card');
+
+                            const commentCardBodyDiv = document.createElement('div');
+                            commentCardBodyDiv.classList.add('card-body');
+
+                            const commentRowInnerDiv = document.createElement('div');
+                            commentRowInnerDiv.classList.add('row');
+
+                            // Conditional logic for comment content
+                            if (post.topComment != null) {
+                              const commentProfileColDiv = document.createElement('div');
+                              commentProfileColDiv.classList.add('col-lg-1', 'col-xl-2');
+
+                              const commentProfileImg = document.createElement('img');
+                              commentProfileImg.classList.add('card-border');
+                              commentProfileImg.height = 70;
+                              commentProfileImg.width = 70;
+                              commentProfileImg.src = post.topComment.user.imageUrl;
+
+                              commentProfileColDiv.appendChild(commentProfileImg);
+
+                              const commentTextColDiv = document.createElement('div');
+                              commentTextColDiv.classList.add('col', 'post-comment-content', 'card-container', 'shadow');
+
+                              const commentUserName = document.createElement('h3');
+                              commentUserName.textContent = post.topComment.user.fullName;
+                              commentUserName.classList.add('txt-main-col');
+
+                              const commentTextPre = document.createElement('pre');
+                              commentTextPre.textContent = post.topComment.content;
+
+                              commentTextColDiv.appendChild(commentUserName);
+                              commentTextColDiv.appendChild(commentTextPre);
+
+                              commentRowInnerDiv.appendChild(commentProfileColDiv);
+                              commentRowInnerDiv.appendChild(commentTextColDiv);
+
+                            } else {
+                              const noCommentPara = document.createElement('p');
+                              noCommentPara.textContent = 'Nobody has commented yet, be the first to share your thoughts!';
+                              commentRowInnerDiv.appendChild((noCommentPara));
+                            }
+
+                            commentCardBodyDiv.appendChild(commentRowInnerDiv);
+                            commentCardDiv.appendChild(commentCardBodyDiv);
+                            commentColDiv.appendChild(commentCardDiv);
+
+                            // SEE MORE COMMENTS SECTION
+                            const seeMoreForm = document.createElement('form');
+                            seeMoreForm.classList.add('col-lg-3', 'col-xl-3', 'offset-lg-1', 'my-auto');
+                            seeMoreForm.action = `${contextPath}/LoveIT/people-zone`;
+                            seeMoreForm.method = 'get';
+
+                            const hiddenActionInput = document.createElement('input');
+                            hiddenActionInput.type = 'hidden';
+                            hiddenActionInput.name = 'action';
+                            hiddenActionInput.value = 'post_details';
+
+                            const hiddenPostIdInput = document.createElement('input');
+                            hiddenPostIdInput.type = 'hidden';
+                            hiddenPostIdInput.name = 'post_id';
+                            hiddenPostIdInput.value = post.id;
+
+                            const hiddenIsFavInput = document.createElement('input');
+                            hiddenIsFavInput.type = 'hidden';
+                            hiddenIsFavInput.name = 'is_favorite';
+                            hiddenIsFavInput.value = post.isFavorite;
+
+                            const seeMoreButton = document.createElement('button');
+                            seeMoreButton.type = 'submit';
+                            seeMoreButton.classList.add('trans-button', 'd-flex', 'align-items-center');
+
+                            const seeMoreStrong = document.createElement('strong');
+                            seeMoreStrong.classList.add('fs-3');
+
+                            const seeMoreText = document.createTextNode('See more');
+
+                            const seeMoreArrow = document.createElement('i');
+                            seeMoreArrow.classList.add('fa-solid', 'fa-arrow-right', 'ms-2');
+
+                            seeMoreStrong.appendChild(seeMoreText);
+                            seeMoreStrong.appendChild(seeMoreArrow);
+                            seeMoreButton.appendChild(seeMoreStrong);
+
+                            seeMoreForm.appendChild(hiddenActionInput);
+                            seeMoreForm.appendChild(hiddenPostIdInput);
+                            seeMoreForm.appendChild(hiddenIsFavInput);
+                            seeMoreForm.appendChild(seeMoreButton);
+
+                            commentRowDiv.appendChild(commentColDiv);
+                            commentRowDiv.appendChild(seeMoreForm);
+
+                            // APPEND ALL SECTION TO THE MAIN DIV
+                            cardBodyDiv.appendChild(userRowDiv);
+                            cardBodyDiv.appendChild(contentDiv);
+                            cardBodyDiv.appendChild(commentRowDiv);
+
+                            cardDiv.appendChild(cardBodyDiv);
+                            mainDiv.appendChild(cardDiv);
+
+                            // Finally, append the main structure to the desired container in your HTML (assuming you have a container with ID "post-container")
+                            document.getElementById('posts-container').appendChild(mainDiv);
+                        });
+                        return fetchedPostIds;
+                    })
+                    .then(fetchedPostIds => {
+                        isLoading = false;
+                        console.log('Fetched post IDs:', fetchedPostIds);
                     });
-                    isLoading = false;
-                });
         }
     </script>
+
 </DN:GenericPage>

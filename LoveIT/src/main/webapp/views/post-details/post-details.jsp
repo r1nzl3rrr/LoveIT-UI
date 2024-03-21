@@ -55,7 +55,7 @@
                     </div>
                     <!-- Content of the post -->
                     <div class="d-flex">
-                        <p class="w-75 pt-4 me-2">${post.content}</p>
+                        <pre class="w-75 pt-4 me-2">${post.content}</pre>
                         <img class="w-25" src="${post.imageUrl}">
                     </div>
                                 

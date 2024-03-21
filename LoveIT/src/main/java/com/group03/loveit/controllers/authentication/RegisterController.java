@@ -79,13 +79,13 @@ public class RegisterController extends HttpServlet {
         String genderId = request.getParameter("picked_gender");
         String preferenceId = request.getParameter("picked_preference");
         
-        
-        GenderDTO gender = GenderDAO.getInstance().getGenderMap().get(Long.parseLong(genderId));
-        GenderDTO preferenceGender = GenderDAO.getInstance().getGenderMap().get(Long.parseLong(preferenceId));
-        
-        request.setAttribute("picked_gender", gender);
-        request.setAttribute("picked_preference", preferenceGender);
-        
+        if(genderId != null && preferenceId != null) {
+            GenderDTO gender = GenderDAO.getInstance().getGenderMap().get(Long.parseLong(genderId));
+            GenderDTO preferenceGender = GenderDAO.getInstance().getGenderMap().get(Long.parseLong(preferenceId));
+
+            request.setAttribute("picked_gender", gender);
+            request.setAttribute("picked_preference", preferenceGender);
+        }
 
         // Check actions then go to page
         if (action == null) {
@@ -158,7 +158,7 @@ public class RegisterController extends HttpServlet {
             int age = DataProcessingUtils.convertDateToAge(date);
 
             UserDAO userDAO = new UserDAO();
-            UserDTO user = new UserDTO(email, CryptoUtils.encode(password), fullName, nickName, age, gender, preferenceGender);
+            UserDTO user = new UserDTO(email, password, fullName, nickName, age, gender, preferenceGender);
             userDAO.insertUser(user);
 
             request.setAttribute("success", "You register the account successfully.");

@@ -23,7 +23,7 @@
         </c:choose>
     </div>
     <div><a href="#"><strong>${param.user_name}</strong></a>
-        <p>${param.content}</p>
+        <pre>${param.content}</pre>
     </div>
 </div>
 
@@ -47,7 +47,7 @@
                     </c:choose>
                 </div>
                 <div><a href="#"><strong>${reply.user.fullName}</strong></a>
-                    <p>${reply.content}</p>
+                    <pre>${reply.content}</pre>
                 </div>
             </div>
         </c:forEach>

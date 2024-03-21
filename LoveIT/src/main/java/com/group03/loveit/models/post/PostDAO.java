@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * This class provides the Data Access Object (DAO) for the Post entity. It
@@ -159,69 +160,74 @@ public class PostDAO implements IPostDAO {
 
     /**
      * Retrieves a list of posts from the database based on certain conditions.
+     * If no more posts are found that match the filter, it retrieves all posts and filters out the ones with 'Disable' status and those already fetched.
+     * The method also supports pagination by taking a page size and page number as parameters.
      *
      * @param pageSize The number of posts to retrieve per page. If null, all posts are retrieved.
      * @param page The page number of the posts to retrieve. If null, all posts are retrieved.
      * @param filter The PostFilter object containing the filtering conditions.
+     * @param fetchedPostIds The list of post IDs that have already been fetched.
      * @return A CompletableFuture that completes with a list of PostDTO objects that match the given conditions.
      */
     @Override
-    public CompletableFuture<List<PostDTO>> getFilteredPosts(Integer pageSize, Integer page, PostFilter filter) {
+    public CompletableFuture<List<PostDTO>> getFilteredPosts(Integer pageSize, Integer page, PostFilter filter, List<Long> fetchedPostIds) {
         return CompletableFuture.supplyAsync(() -> {
             List<PostDTO> posts = new ArrayList<>();
             try (Connection conn = DBUtils.getConnection()) {
                 if (conn == null) {
                     throw new RuntimeException("Connection is null");
                 }
+                // Base SQL query to retrieve posts
                 String baseQuery = "SELECT p.Id, p.[User_Id], p.Content, p.Created_At, p.Hearts_Total, p.Comment_Total, p.[Status], p.Image_Url " +
-                        "FROM Post p JOIN [User] u ON p.[User_Id] = u.Id " +
-                        "WHERE (? IS NULL OR p.[User_Id] != ?) AND (? IS NULL OR u.Preference_Id = ?) " +
-                        "AND (? IS NULL OR (p.Content LIKE ? OR u.FullName LIKE ? OR u.NickName LIKE ?)) " +
-                        "AND (? IS NULL OR u.Gender_Id = ?) AND p.[Status] != 'Disable' " +
-                        "ORDER BY p.Id DESC";
+                        "FROM Post p JOIN [User] u ON p.[User_Id] = u.Id ";
 
+                if (filter.getKeyword() != null) {
+                    baseQuery += "WHERE p.Content LIKE ? ";
+                } else {
+                    baseQuery += "WHERE (? IS NULL OR p.[User_Id] != ?) AND (? IS NULL OR u.Preference_Id = ?) " +
+                            "AND (? IS NULL OR u.Gender_Id = ?) AND p.[Status] != 'Disable' ";
+                }
+
+                baseQuery += "ORDER BY p.Id DESC";
+
+                // Add pagination to the query if pageSize and page are not null
                 String query = (pageSize != null && page != null) ? baseQuery + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY" : baseQuery;
 
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
+                    // Set the parameters for the PreparedStatement based on the filter
                     int index = 1;
-                    if (filter.getUserId() == null) {
-                        ps.setNull(index++, java.sql.Types.NUMERIC);
-                        ps.setNull(index++, java.sql.Types.NUMERIC);
-                    } else {
-                        ps.setLong(index++, filter.getUserId());
-                        ps.setLong(index++, filter.getUserId());
-                    }
-                    if (filter.getGenderId() == null) {
-                        ps.setNull(index++, java.sql.Types.NUMERIC);
-                        ps.setNull(index++, java.sql.Types.NUMERIC);
-                    } else {
-                        ps.setLong(index++, filter.getGenderId());
-                        ps.setLong(index++, filter.getGenderId());
-                    }
-                    if (filter.getKeyword() == null) {
-                        ps.setNull(index++, java.sql.Types.VARCHAR);
-                        ps.setNull(index++, java.sql.Types.VARCHAR);
-                        ps.setNull(index++, java.sql.Types.VARCHAR);
-                        ps.setNull(index++, java.sql.Types.VARCHAR);
-                    } else {
+                    if (filter.getKeyword() != null) {
                         String keyword = "%" + filter.getKeyword() + "%";
-                        ps.setString(index++, filter.getKeyword());
                         ps.setString(index++, keyword);
-                        ps.setString(index++, keyword);
-                        ps.setString(index++, keyword);
-                    }
-                    if (filter.getPrefGenderId() == null) {
-                        ps.setNull(index++, java.sql.Types.NUMERIC);
-                        ps.setNull(index++, java.sql.Types.NUMERIC);
                     } else {
-                        ps.setLong(index++, filter.getPrefGenderId());
-                        ps.setLong(index++, filter.getPrefGenderId());
+                        if (filter.getUserId() == null) {
+                            ps.setNull(index++, java.sql.Types.NUMERIC);
+                            ps.setNull(index++, java.sql.Types.NUMERIC);
+                        } else {
+                            ps.setLong(index++, filter.getUserId());
+                            ps.setLong(index++, filter.getUserId());
+                        }
+                        if (filter.getGenderId() == null) {
+                            ps.setNull(index++, java.sql.Types.NUMERIC);
+                            ps.setNull(index++, java.sql.Types.NUMERIC);
+                        } else {
+                            ps.setLong(index++, filter.getGenderId());
+                            ps.setLong(index++, filter.getGenderId());
+                        }
+                        if (filter.getPrefGenderId() == null) {
+                            ps.setNull(index++, java.sql.Types.NUMERIC);
+                            ps.setNull(index++, java.sql.Types.NUMERIC);
+                        } else {
+                            ps.setLong(index++, filter.getPrefGenderId());
+                            ps.setLong(index++, filter.getPrefGenderId());
+                        }
                     }
                     if (pageSize != null && page != null) {
                         ps.setInt(index++, pageSize * (page - 1));
-                        ps.setInt(index++, pageSize);
+                        ps.setInt(index, pageSize);
                     }
 
+                    // Execute the query and add the results to the posts list
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
                             long userId = rs.getLong(COL_USER_ID);
@@ -242,18 +248,31 @@ public class PostDAO implements IPostDAO {
                         }
                     }
                 }
-
-                // If no posts were found with the filter, fetch all posts
-                if (posts.isEmpty()) {
-                    posts = getAllPosts().join();
-                }
-
             } catch (SQLException e) {
                 System.out.println("Cannot get filtered posts: " + e.getMessage());
             }
+
+            // If no more posts are found, get all posts and filter out the fetched IDs
+            if (posts.isEmpty()) {
+                posts = getAllPosts().join();
+                if (pageSize != null) {
+                    // Limit the number of posts to the page size
+                    posts = posts.stream()
+                            .filter(post -> !post.getStatus().equals(EStatus.DISABLE.name()) && !fetchedPostIds.contains(post.getId()))
+                            .limit(pageSize)
+                            .collect(Collectors.toList());
+                } else {
+                    posts = posts.stream()
+                            .filter(post -> !post.getStatus().equals(EStatus.DISABLE.name()) && !fetchedPostIds.contains(post.getId()))
+                            .collect(Collectors.toList());
+                }
+            }
+
             return posts;
         });
     }
+
+
 
     /**
      * Inserts a new post into the database.
@@ -387,5 +406,31 @@ public class PostDAO implements IPostDAO {
             }
             return null;
         });
+    }
+    
+        /**
+     * Get count of posts
+     *
+     * @return
+     */
+    public long getPostsCount() {
+
+        try (Connection conn = DBUtils.getConnection()) {
+            String sql
+                    = " SELECT count(*) as post_count "
+                    + " FROM Post ";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getLong("post_count");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Cannot get posts: " + e.getMessage());
+        }
+
+        return 0L;
     }
 }

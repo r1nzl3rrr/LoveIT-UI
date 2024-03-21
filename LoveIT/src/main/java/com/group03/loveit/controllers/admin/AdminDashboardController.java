@@ -35,11 +35,17 @@ public class AdminDashboardController extends HttpServlet {
             throws ServletException, IOException {
 
         // Get number of posts, users, comments
-        PostDAO postDAO = new PostDAO();
         UserDAO userDAO = new UserDAO();
         CommentDAO commentDAO = new CommentDAO();
+        PostDAO postDAO = new PostDAO();
 
-//        int noPosts = postDAO.getAllPosts()
+        long noPosts = postDAO.getPostsCount();
+        long noComments = commentDAO.getCommentsCount();
+        long noUsers = userDAO.getUsersCount();
+
+        request.setAttribute("userCount", noUsers);
+        request.setAttribute("postCount", noPosts);
+        request.setAttribute("commentCount", noComments);
         request.getRequestDispatcher("/views/admin/admin-dashboard.jsp").forward(request, response);
     }
 

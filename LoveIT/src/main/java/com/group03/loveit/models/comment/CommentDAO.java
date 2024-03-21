@@ -105,7 +105,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL ORDER BY " + COL_ID + " DESC";
+                String query = "SELECT * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL AND " + COL_STATUS + " != 'Disable' ORDER BY " + COL_ID + " DESC";
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, postId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -151,7 +151,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT TOP 1 * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL ORDER BY " + COL_ID + " DESC";
+                String query = "SELECT TOP 1 * FROM Comment WHERE " + COL_POST_ID + " = ? AND " + COL_REPLY_ID + " IS NULL AND " + COL_STATUS + " != 'Disable' ORDER BY " + COL_ID + " DESC";
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, postId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -199,7 +199,7 @@ public class CommentDAO implements ICommentDAO {
                 if (conn == null) {
                     throw new SQLException();
                 }
-                String query = "SELECT * FROM Comment WHERE " + COL_REPLY_ID + " = ? ORDER BY " + COL_USER_ID + " DESC";
+                String query = "SELECT * FROM Comment WHERE " + COL_REPLY_ID + " = ? AND " + COL_STATUS + " != 'Disable' ORDER BY " + COL_USER_ID + " DESC";
                 CommentDTO parentCmt = getCommentById(parentId).join();
                 try (PreparedStatement ps = conn.prepareStatement(query)) {
                     ps.setLong(1, parentId);
@@ -400,5 +400,31 @@ public class CommentDAO implements ICommentDAO {
                 System.out.println("Cannot delete comment: " + ex.getMessage());
             }
         });
+    }
+    
+        /**
+     * Count total of comments
+     *
+     * @return
+     */
+    public long getCommentsCount() {
+
+        try (Connection conn = DBUtils.getConnection()) {
+            String sql
+                    = " SELECT count(*) as comment_count "
+                    + " FROM Comment ";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getLong("comment_count");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Cannot get comments: " + e.getMessage());
+        }
+
+        return 0L;
     }
 }

@@ -1,6 +1,7 @@
 package com.group03.loveit.controllers.people_zone;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import com.group03.loveit.models.comment.CommentDAO;
 import com.group03.loveit.models.comment.CommentDTO;
 import com.group03.loveit.models.favourite.FavoriteDAO;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 /**
  * This servlet handles requests related to the people zone feature.
  * It supports operations like viewing post details, searching for posts, fetching more posts, creating a post, and favoriting a post.
+ *
+ * @author Nhat
  */
 public class PeopleZoneController extends HttpServlet {
     /**
@@ -47,14 +50,43 @@ public class PeopleZoneController extends HttpServlet {
                 case "search":
                     handleSearchGet(request, response);
                     break;
-                case "fetch":
-                    handleFetchGet(request, response);
-                    break;
                 default:
                     break;
             }
         } else {
             handleDefaultGet(request, response);
+        }
+    }
+
+    /**
+     * Handles POST requests.
+     * Depending on the action parameter in the request, it delegates the handling to the appropriate method.
+     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
+        String action = request.getParameter("action");
+        if (action != null) {
+            try {
+                switch (action) {
+                    case "create_post":
+                        handleCreatePostPost(request, response);
+                        break;
+                    case "favorite":
+                        handleFavoritePost(request, response);
+                        break;
+                    case "fetch":
+                        handleFetchGet(request, response);
+                        break;
+                    default:
+                        break;
+                }
+            } catch (NumberFormatException e) {
+                log("Invalid post ID: " + e.getMessage());
+            } catch (ServletException | IOException e) {
+                log("Error forwarding request: " + e.getMessage());
+            } catch (Exception e) {
+                log("Unexpected error: " + e.getMessage());
+            }
         }
     }
 
@@ -77,7 +109,7 @@ public class PeopleZoneController extends HttpServlet {
     private void handleSearchGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String keyword = request.getParameter("keyword");
         if (keyword != null) {
-            processPostList(request, keyword, 1);
+            processPostList(request, keyword, 1, null);
             RequestDispatcher dispatcher = request.getRequestDispatcher("/views/people-zone/people-zone.jsp");
             dispatcher.forward(request, response);
         }
@@ -91,7 +123,9 @@ public class PeopleZoneController extends HttpServlet {
         String pageParam = request.getParameter("page");
         if (pageParam != null) {
             int page = Integer.parseInt(pageParam);
-            processPostList(request, null, page);
+            String fetchedPostIdsJson = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+            List<Long> fetchedPostIds = new Gson().fromJson(fetchedPostIdsJson, new TypeToken<List<Long>>(){}.getType());
+            processPostList(request, null, page, fetchedPostIds);
             Gson gson = new GsonBuilder()
                     .registerTypeAdapter(LocalDateTime.class, new JsonSerializer<LocalDateTime>() {
                         @Override
@@ -118,38 +152,9 @@ public class PeopleZoneController extends HttpServlet {
      * It processes the post list and forwards the request to the people zone page.
      */
     private void handleDefaultGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        processPostList(request, null, 1);
+        processPostList(request, null, 1, null);
         RequestDispatcher dispatcher = request.getRequestDispatcher("/views/people-zone/people-zone.jsp");
         dispatcher.forward(request, response);
-    }
-
-    /**
-     * Handles POST requests.
-     * Depending on the action parameter in the request, it delegates the handling to the appropriate method.
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-        String action = request.getParameter("action");
-        if (action != null) {
-            try {
-                switch (action) {
-                    case "create_post":
-                        handleCreatePostPost(request, response);
-                        break;
-                    case "favorite":
-                        handleFavoritePost(request, response);
-                        break;
-                    default:
-                        break;
-                }
-            } catch (NumberFormatException e) {
-                log("Invalid post ID: " + e.getMessage());
-            } catch (ServletException | IOException e) {
-                log("Error forwarding request: " + e.getMessage());
-            } catch (Exception e) {
-                log("Unexpected error: " + e.getMessage());
-            }
-        }
     }
 
     /**
@@ -174,6 +179,12 @@ public class PeopleZoneController extends HttpServlet {
 
             FavoriteDAO favoriteDAO = new FavoriteDAO();
             UserDTO user = (UserDTO) request.getSession().getAttribute(ConstantUtils.SESSION_USER);
+
+            if (user == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
+            }
+
             List<FavoriteDTO> favourites = favoriteDAO.getFavoritesByUser(user.getId()).join();
             boolean isFavorite = favourites.stream().anyMatch(fav -> fav.getPost().getId() == post.getId());
             if (isFavorite) {
@@ -190,7 +201,7 @@ public class PeopleZoneController extends HttpServlet {
      * This method processes the post list for the people zone page.
      * It fetches the posts from the database, checks if each post is a favorite, and sets the posts as a request attribute.
      */
-    private void processPostList(HttpServletRequest request, String keyword, int page) {
+    private void processPostList(HttpServletRequest request, String keyword, int page, List<Long> fetchedPostIds) {
         int pageSize = 10;
         PostDAO postDAO = new PostDAO();
 
@@ -214,7 +225,11 @@ public class PeopleZoneController extends HttpServlet {
             filter.setKeyword(keyword);
         }
 
-        List<PostDTO> posts = postDAO.getFilteredPosts(pageSize, page, filter).join();
+        if (fetchedPostIds == null) {
+            fetchedPostIds = new ArrayList<>();
+        }
+
+        List<PostDTO> posts = postDAO.getFilteredPosts(pageSize, page, filter, fetchedPostIds).join();
 
         // Fetch the top comment for each post
         for (PostDTO post : posts) {

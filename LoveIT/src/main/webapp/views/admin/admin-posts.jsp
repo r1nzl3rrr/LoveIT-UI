@@ -44,11 +44,11 @@
                                 <td>${post.createdAt}</td>
                                 <td>
                                     <div class="d-flex">
-                                        <form action="${pageContext.request.contextPath}/admin/posts?action=delete_p&id=${post.id}" method="post">
+<!--                                        <form action="${pageContext.request.contextPath}/admin/posts?action=delete_p&id=${post.id}" method="post">
                                             <button
                                                 class="btn btn-white btn-admin d-flex justify-content-xl-center align-items-xl-center shadow bg-white me-2"
                                                 type="submit">Delete</button>
-                                        </form>
+                                        </form>-->
                                         <form action="${pageContext.request.contextPath}/admin/posts?action=flag_p&id=${post.id}" method="post">
                                             <button
                                                 class="btn btn-success btn-admin d-flex justify-content-xl-center align-items-xl-center shadow"
@@ -91,11 +91,11 @@
                                     <td>${comment.createdAt}</td>
                                     <td>
                                         <div class="d-flex">
-                                            <form action="${pageContext.request.contextPath}/admin/posts?action=delete_cmt&id=${comment.id}" method="post">
+<!--                                            <form action="${pageContext.request.contextPath}/admin/posts?action=delete_cmt&id=${comment.id}" method="post">
                                                 <button 
                                                     class="btn btn-white btn-admin d-flex justify-content-xl-center align-items-xl-center shadow bg-white me-2"
                                                     type="submit">Delete</button>
-                                            </form>
+                                            </form>-->
                                             <form action="${pageContext.request.contextPath}/admin/posts" method="get">
                                                 <input type="hidden" name="action" value="flag_cmt" />
                                                 <input type="hidden" name="id" value="${comment.id}" />

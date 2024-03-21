@@ -5,11 +5,13 @@
  */
 package com.group03.loveit.controllers.admin;
 
+import com.group03.loveit.utilities.ConstantUtils;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  *
@@ -37,6 +39,13 @@ public class AdminController extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         response.setContentType("text/html;charset=UTF-8");
+
+        // Check session before management
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute(ConstantUtils.SESSION_USER) == null) {
+            response.sendRedirect("login");
+            return;
+        }
 
         String action = request.getParameter("action");
         String url = "admin";

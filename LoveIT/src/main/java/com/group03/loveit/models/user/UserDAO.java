@@ -247,6 +247,32 @@ public final class UserDAO implements IUserDAO {
 
         return false;
     }
+    
+        /**
+     * Get count of posts
+     *
+     * @return
+     */
+    public long getUsersCount() {
+
+        try (Connection conn = DBUtils.getConnection()) {
+            String sql
+                    = " SELECT count(*) as user_count "
+                    + " FROM [User] ";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getLong("user_count");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Cannot get users: " + e.getMessage());
+        }
+
+        return 0L;
+    }
 
 //    @Override
 //    public boolean deleteUserById(long id) {

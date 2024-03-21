@@ -13,7 +13,7 @@
     <main>             
         <c:set var="user" value="${sessionScope.SESSION_USER}"></c:set>
         <div class="card mx-auto w-50">
-            <form action="user-profile" method="POST">
+            <form action="${pageContext.request.contextPath}/user-profile" method="POST">
                 <div class="card-body">
                     <div class="text-center border-bottom border-dark-subtle border-3 pb-3 mb-3">
                         <img height="200px" src="${user.imageUrl}">
@@ -165,12 +165,13 @@
                     </div>
                 </div>
                 <div class="text-center mb-3">
-                    <input type="hidden" name="action" value="${action}" />
+                    <input type="hidden" name="action" value="edit" />
                     <button class="btn btn-primary w-75 btn-pink shadow" type="submit">Save your changes</button>
                 </div>
             </form>
             <script src="${pageContext.request.contextPath}/assets/js/slider.js"></script>                    
         </div>
+        <h3>${success}</h3>
     </main>
 
 </DN:GenericPage>
